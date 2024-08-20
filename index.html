@@ -105,7 +105,7 @@
                 if (response.ok) {
                     const filename = await response.text();
                     document.getElementById('linkContainer').innerHTML = 
-                        `Letter is <a href="open.html?letter=${filename}" target="_blank">here</a>!`;
+                        `Letter is <a href="open?letter=${filename}" target="_blank">here</a>!`;
                 } else {
                     const errorText = await response.text();
                     alert(`Error: ${errorText}`);
