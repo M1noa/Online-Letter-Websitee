@@ -104,7 +104,7 @@
 
         .link-container button {
             width: 100px;
-            border-radius: 0 8px 8px 0;
+            border-radius: 8px;
         }
     </style>
 </head>
@@ -113,7 +113,7 @@
         <h1><i class="fa-solid fa-envelope"></i> Virtual Letters <3</h1>
         <div class="input-card">
             <textarea id="letterText" placeholder="Type your letter here..."></textarea>
-            <p>Time till unlock:</p>
+            <p>Time Locked:</p>
             <select id="timeSelect" class="time-select">
                 <option value="">Instant</option>
                 <option value="3600">In 1 Hour</option>
@@ -170,7 +170,7 @@
                     const filename = await response.text();
                     document.getElementById('linkContainer').innerHTML = `
                         <div class="link-container">
-                            <input type="text" value="https://letter.minoa.cat/?letter=${filename}" readonly id="letterLink">
+                            <input type="text" value="https://letter.minoa.cat/open?letter=${filename}" readonly id="letterLink">
                             <button onclick="copyLink()">Copy</button>
                         </div>
                     `;
