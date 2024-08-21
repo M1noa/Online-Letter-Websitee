@@ -31,6 +31,7 @@
             box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1);
             width: 80%;
             max-width: 800px;
+            position: relative;
         }
 
         h1 {
@@ -39,42 +40,164 @@
             color: #333;
         }
 
-        .output-card {
-            margin: 20px auto;
-            padding: 15px;
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        .lock-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .lock-container .locked-icon {
+            font-size: 2em;
+            color: #333;
+            display: inline-block;
+        }
+
+        .lock-container .countdown {
+            font-size: 1.5em;
+            color: #333;
+            text-align: center;
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        .letter-content {
+            position: relative;
+            padding: 20px;
+        }
+
+        .letter-content textarea {
+            width: 100%;
+            height: 300px;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            resize: none;
+            background: #f5f5f5;
+            display: none;
+            margin: 0 auto;
             text-align: left;
-            white-space: pre-wrap; /* Preserve white space and new lines */
+        }
+
+        .blurred {
+            filter: blur(10px);
+            pointer-events: none;
+            position: relative;
+            z-index: 1;
+        }
+
+        .unblur {
+            animation: unblur 1s ease-in-out forwards;
+        }
+
+        @keyframes unblur {
+            from { filter: blur(10px); }
+            to { filter: blur(0); }
+        }
+
+        .fade-out {
+            animation: fadeOut 1s ease-in-out forwards;
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1><i class="fa-solid fa-envelope"></i> Virtual Letters <3</h1>
-        <h2>Someone sent you a letter :O</h2>
-        <div class="output-card">
-            <p id="letterContent">Loading...</p>
+        <div class="lock-container" id="lockContainer">
+            <div id="lockedIcon" class="locked-icon"><i class="fa-solid fa-lock"></i></div>
+            <div id="countdown" class="countdown"></div>
+        </div>
+        <div id="letterContent" class="letter-content blurred">
+            <textarea readonly></textarea>
         </div>
     </div>
 
     <script>
+        function updateCountdown(endTime) {
+            const countdownElement = document.getElementById('countdown');
+            const lockedIconElement = document.getElementById('lockedIcon');
+            const lockContainer = document.getElementById('lockContainer');
+            const letterContentElement = document.getElementById('letterContent');
+            const now = Date.now();
+
+            if (endTime <= now) {
+                countdownElement.classList.add('fade-out');
+                lockedIconElement.classList.add('fade-out');
+                setTimeout(() => {
+                    lockContainer.classList.add('hidden');
+                    letterContentElement.classList.remove('blurred');
+                    letterContentElement.classList.add('unblur');
+                    letterContentElement.querySelector('textarea').style.display = 'block';
+                }, 1000); // Match the fade-out animation duration
+                return;
+            }
+
+            const timeDiff = endTime - now;
+            const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+
+            countdownElement.textContent = `${String(days).padStart(2, '0')}:${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
         async function fetchLetter() {
             const urlParams = new URLSearchParams(window.location.search);
             const letterName = urlParams.get('letter');
+            const letterUrl = `https://catlitter-one.vercel.app/api/view/${letterName}`;
 
             try {
-                const response = await fetch(`https://catlitter-one.vercel.app/api/view/${letterName}`);
+                const response = await fetch(letterUrl);
                 if (response.ok) {
-                    const content = await response.text();
-                    document.getElementById('letterContent').innerHTML = `<p>${content}</p>`;
+                    const data = await response.json();
+                    const now = Date.now();
+                    const letterContent = data.text;
+
+                    const letterContentElement = document.getElementById('letterContent');
+                    const countdownElement = document.getElementById('countdown');
+                    const lockedIconElement = document.getElementById('lockedIcon');
+                    const lockContainer = document.getElementById('lockContainer');
+
+                    letterContentElement.querySelector('textarea').textContent = letterContent;
+
+                    if (!data.timestamp || now >= data.timestamp * 1000) {
+                        letterContentElement.classList.remove('blurred');
+                        letterContentElement.classList.add('unblur');
+                        document.getElementById('lockedIcon').remove();
+                        letterContentElement.querySelector('textarea').style.display = 'block';
+                        lockContainer.classList.add('hidden');
+                    } else {
+                        letterContentElement.querySelector('textarea').style.display = 'block';
+                        updateCountdown(data.timestamp * 1000);
+                        countdownElement.classList.remove('fade-out');
+                        lockedIconElement.classList.remove('fade-out');
+                        lockContainer.classList.remove('hidden');
+                        const interval = setInterval(() => updateCountdown(data.timestamp * 1000), 1000);
+
+                        setTimeout(() => {
+                            clearInterval(interval);
+                            countdownElement.classList.add('fade-out');
+                            lockedIconElement.classList.add('fade-out');
+                            setTimeout(() => {
+                                lockContainer.classList.add('hidden');
+                                letterContentElement.classList.remove('blurred');
+                                letterContentElement.classList.add('unblur');
+                                document.getElementById('lockedIcon').remove();
+                            }, 1000); // Match the fade-out animation duration
+                        }, data.timestamp * 1000 - now);
+                    }
                 } else {
-                    document.getElementById('letterContent').textContent = 'Failed to load letter.';
+                    // If the letter fails to load, redirect to the letter URL
+                    window.location.href = letterUrl;
                 }
             } catch (error) {
                 console.error('Error fetching letter:', error);
-                document.getElementById('letterContent').textContent = 'Failed to load letter.';
+                // If an error occurs, redirect to the letter URL
+                window.location.href = letterUrl;
             }
         }
 
