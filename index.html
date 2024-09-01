@@ -161,7 +161,7 @@
             formData.append("file", blob, "letter.json");
 
             try {
-                const response = await fetch("https://catlitter-one.vercel.app/api/upload", {
+                const response = await fetch("https://catlitter-one.vercel.app/api/upload/letter/", {
                     method: "POST",
                     body: formData
                 });
@@ -170,7 +170,7 @@
                     const filename = await response.text();
                     document.getElementById('linkContainer').innerHTML = `
                         <div class="link-container">
-                            <input type="text" value="https://letter.minoa.cat/open?letter=${filename}" readonly id="letterLink">
+                            <input type="text" value="https://letter.minoa.cat/read?letter=${filename}" readonly id="letterLink">
                             <button onclick="copyLink()">Copy</button>
                         </div>
                     `;
