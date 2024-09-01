@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Letters <3</title>
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/ddc5192584.js" crossorigin="anonymous"></script>
+    <meta property="og:title" content="Virtual Letters <3">
+    <meta property="og:description" content="" id="ogDescription">
+    <style>
+        body {
+            font-family: 'Ubuntu', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .container {
+            text-align: center;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 800px;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .lock-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .lock-container .locked-icon {
+            font-size: 2em;
+            color: #333;
+            display: inline-block;
+        }
+
+        .lock-container .countdown {
+            font-size: 1.5em;
+            color: #333;
+            text-align: center;
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        .letter-content {
+            position: relative;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .letter-content textarea {
+            width: 100%;
+            height: 300px;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            resize: none;
+            background: #f5f5f5;
+            display: none;
+            margin: 0 auto;
+            text-align: left;
+        }
+
+        .blurred {
+            filter: blur(4.25px);
+            pointer-events: none;
+            user-select: none; /* Prevent text selection */
+            position: relative;
+            z-index: 1;
+        }
+
+        .unblur {
+            animation: unblur 1s ease-in-out forwards;
+            user-select: text; /* Allow text selection when unblurred */
+        }
+
+        @keyframes unblur {
+            from { filter: blur(4px); }
+            to { filter: blur(0); }
+        }
+
+        .fade-out {
+            animation: fadeOut 1s ease-in-out forwards;
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        /* Invisible overlay */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0);
+            z-index: 2;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fa-solid fa-envelope"></i> Virtual Letters <3</h1>
+        <div class="lock-container" id="lockContainer">
+            <div id="lockedIcon" class="locked-icon"><i class="fa-solid fa-lock"></i></div>
+            <div id="countdown" class="countdown"></div>
+        </div>
+        <div id="letterContent" class="letter-content blurred">
+            <div id="overlay" class="overlay"></div>
+            <textarea readonly></textarea>
+        </div>
+    </div>
+
+    <script>
+        function updateCountdown(endTime) {
+            const countdownElement = document.getElementById('countdown');
+            const lockedIconElement = document.getElementById('lockedIcon');
+            const lockContainer = document.getElementById('lockContainer');
+            const letterContentElement = document.getElementById('letterContent');
+            const overlayElement = document.getElementById('overlay');
+            const now = Date.now();
+
+            if (endTime <= now) {
+                countdownElement.classList.add('fade-out');
+                lockedIconElement.classList.add('fade-out');
+                setTimeout(() => {
+                    lockContainer.classList.add('hidden');
+                    letterContentElement.classList.remove('blurred');
+                    overlayElement.style.display = 'none';
+                    letterContentElement.classList.add('unblur');
+                    letterContentElement.querySelector('textarea').style.display = 'block';
+                }, 1000); // Match the fade-out animation duration
+                return;
+            }
+
+            const timeDiff = endTime - now;
+            const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+
+            countdownElement.textContent = `${String(days).padStart(2, '0')}:${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        async function fetchLetter() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const letterName = urlParams.get('letter');
+            const letterUrl = `https://catlitter-one.vercel.app/api/view/letter/${letterName}`;
+
+            try {
+                const response = await fetch(letterUrl);
+                if (response.ok) {
+                    const data = await response.json();
+                    const now = Date.now();
+                    const letterContent = data.text;
+
+                    const letterContentElement = document.getElementById('letterContent');
+                    const overlayElement = document.getElementById('overlay');
+                    const countdownElement = document.getElementById('countdown');
+                    const lockedIconElement = document.getElementById('lockedIcon');
+                    const lockContainer = document.getElementById('lockContainer');
+
+                    letterContentElement.querySelector('textarea').textContent = letterContent;
+
+                    // Set the first line in the OG description meta tag
+                    const firstLine = letterContent.split('\n')[0];
+                    document.getElementById('ogDescription').setAttribute('content', firstLine);
+
+                    if (!data.timestamp || now >= data.timestamp * 1000) {
+                        letterContentElement.classList.remove('blurred');
+                        overlayElement.style.display = 'none';
+                        letterContentElement.classList.add('unblur');
+                        document.getElementById('lockedIcon').remove();
+                        letterContentElement.querySelector('textarea').style.display = 'block';
+                        lockContainer.classList.add('hidden');
+                    } else {
+                        letterContentElement.querySelector('textarea').style.display = 'block';
+                        updateCountdown(data.timestamp * 1000);
+                        countdownElement.classList.remove('fade-out');
+                        lockedIconElement.classList.remove('fade-out');
+                        lockContainer.classList.remove('hidden');
+                        const interval = setInterval(() => updateCountdown(data.timestamp * 1000), 1000);
+
+                        setTimeout(() => {
+                            clearInterval(interval);
+                            countdownElement.classList.add('fade-out');
+                            lockedIconElement.classList.add('fade-out');
+                            setTimeout(() => {
+                                lockContainer.classList.add('hidden');
+                                letterContentElement.classList.remove('blurred');
+                                overlayElement.style.display = 'none';
+                                letterContentElement.classList.add('unblur');
+                                document.getElementById('lockedIcon').remove();
+                            }, 1000); // Match the fade-out animation duration
+                        }, data.timestamp * 1000 - now);
+                    }
+                } else {
+                    // If the letter fails to load, redirect to the letter URL
+                    window.location.href = letterUrl;
+                }
+            } catch (error) {
+                console.error('Error fetching letter:', error);
+                // If an error occurs, redirect to the letter URL
+                window.location.href = letterUrl;
+            }
+        }
+
+        fetchLetter();
+    </script>
+</body>
+</html>
