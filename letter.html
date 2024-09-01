@@ -157,10 +157,10 @@
             }
 
             const timeDiff = endTime - now;
-            const days = Math.floor(timeDiff / (1000 * 60 * 60 * 60 * 24));
-            const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((timeDiff % (1000 * 60 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((timeDiff % (1000 * 60 * 60)) / 1000);
+            const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
 
             countdownElement.textContent = `${String(days).padStart(2, '0')}:${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
         }
@@ -189,7 +189,7 @@
                     const firstLine = letterContent.split('\n')[0];
                     document.getElementById('ogDescription').setAttribute('content', firstLine);
 
-                    if (!data.timestamp || now >= data.timestamp * 1000 * 60) {
+                    if (!data.timestamp || now >= data.timestamp * 1000) {
                         letterContentElement.classList.remove('blurred');
                         overlayElement.style.display = 'none';
                         letterContentElement.classList.add('unblur');
@@ -198,7 +198,7 @@
                         lockContainer.classList.add('hidden');
                     } else {
                         letterContentElement.querySelector('textarea').style.display = 'block';
-                        updateCountdown(data.timestamp * 1000 * 60);
+                        updateCountdown(data.timestamp * 1000);
                         countdownElement.classList.remove('fade-out');
                         lockedIconElement.classList.remove('fade-out');
                         lockContainer.classList.remove('hidden');
